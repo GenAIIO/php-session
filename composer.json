@@ -1,0 +1,31 @@
+{
+    "name": "genai/session",
+    "version": "1.0.0",
+    "description": "Session component with pluggable storage: native files (default), a project file dir (cache/session), or a database (PDO). A small Session API over native PHP sessions; a SessionStore save-handler decides where the data lives. Driver chosen from the [session] config group. PHP 5.3-safe runtime.",
+    "type": "library",
+    "license": "MIT",
+    "repositories": [
+        { "type": "path", "url": "../php-attribute" },
+        { "type": "path", "url": "../php-container" },
+        { "type": "path", "url": "../php-property" }
+    ],
+    "require": {
+        "php": ">=5.3.0",
+        "genai/property": "*"
+    },
+    "suggest": {
+        "genai/attribute": "PHP 8 build-time scanning of SessionProperty.",
+        "genai/di": "Wire the Session bean (a #[Configuration] #[Bean(Session::class)] using SessionFactory).",
+        "ext-pdo": "Required only for the 'database' session store."
+    },
+    "extra": {
+        "genai": {
+            "scan": ["GenAI\\Session\\Bundle"]
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "GenAI\\Session\\": "src/"
+        }
+    }
+}
