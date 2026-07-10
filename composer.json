@@ -1,6 +1,5 @@
 {
     "name": "genai/session",
-    "version": "1.0.0",
     "description": "Session component with pluggable storage: native files (default), a project file dir (cache/session), or a database (PDO). A small Session API over native PHP sessions; a SessionStore save-handler decides where the data lives. Driver chosen from the [session] config group. PHP 5.3-safe runtime.",
     "type": "library",
     "license": "Apache-2.0",
