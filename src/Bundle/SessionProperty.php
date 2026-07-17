@@ -14,8 +14,13 @@ use GenAI\Property\Util\Map;
  *   driver   = file          ; default | file | database
  *   name     = KIDSAFE
  *   lifetime = 0             ; cookie lifetime in seconds (0 = until browser close)
- *   path     = cache/session ; for driver=file
+ *   path     = cache/session ; storage dir for driver=file
  *   table    = sessions      ; for driver=database
+ *   ; --- cookie params (all optional; sensible defaults) ---
+ *   cookie_path     = /        ; cookie path
+ *   cookie_domain   =          ; '' = host-only; '.example.com' = shared across subdomains
+ *   cookie_secure   =          ; '' = auto (HTTPS) | 1 = force secure | 0 = never
+ *   cookie_httponly = 1        ; 1 = httponly (default) | 0 = readable by JS
  *
  * Fed to SessionFactory to build the Session bean. Runtime class (PHP 5.3-safe).
  */
@@ -27,16 +32,28 @@ class SessionProperty extends AbstractProperty
     private $lifetime;
     private $path;
     private $table;
+    private $cookiePath;
     private $cookieDomain;
+    private $cookieSecure;
+    private $cookieHttpOnly;
 
     public function bindData(Map $data)
     {
-        $this->driver       = $data->get('driver');
-        $this->name         = $data->get('name');
-        $this->lifetime     = $data->get('lifetime');
-        $this->path         = $data->get('path');
-        $this->table        = $data->get('table');
-        $this->cookieDomain = $data->get('cookie_domain');
+        $this->driver         = $data->get('driver');
+        $this->name           = $data->get('name');
+        $this->lifetime       = $data->get('lifetime');
+        $this->path           = $data->get('path');
+        $this->table          = $data->get('table');
+        $this->cookiePath     = $data->get('cookie_path');
+        $this->cookieDomain   = $data->get('cookie_domain');
+        $this->cookieSecure   = $data->get('cookie_secure');
+        $this->cookieHttpOnly = $data->get('cookie_httponly');
+    }
+
+    /** Cookie path. Default '/'. */
+    public function getCookiePath()
+    {
+        return ($this->cookiePath !== null && $this->cookiePath !== '') ? (string) $this->cookiePath : '/';
     }
 
     /**
@@ -46,6 +63,24 @@ class SessionProperty extends AbstractProperty
     public function getCookieDomain()
     {
         return ($this->cookieDomain !== null) ? (string) $this->cookieDomain : '';
+    }
+
+    /**
+     * Secure flag. null (default) = auto (secure only over HTTPS); '1'/'0' force on/off.
+     * @return bool|null
+     */
+    public function getCookieSecure()
+    {
+        if ($this->cookieSecure === null || $this->cookieSecure === '') {
+            return null; // auto-detect from the request
+        }
+        return !($this->cookieSecure === '0' || $this->cookieSecure === 0 || $this->cookieSecure === false);
+    }
+
+    /** HttpOnly flag. Default true; set '0' to allow JavaScript access. */
+    public function getCookieHttpOnly()
+    {
+        return !($this->cookieHttpOnly === '0' || $this->cookieHttpOnly === 0 || $this->cookieHttpOnly === false);
     }
 
     public function getDriver()

@@ -31,9 +31,12 @@ class SessionFactory
     public static function build(SessionProperty $cfg, $pdo = null)
     {
         $options = array(
-            'name'     => $cfg->getName(),
-            'lifetime' => $cfg->getLifetime(),
-            'domain'   => $cfg->getCookieDomain(),
+            'name'        => $cfg->getName(),
+            'lifetime'    => $cfg->getLifetime(),
+            'cookie_path' => $cfg->getCookiePath(),
+            'domain'      => $cfg->getCookieDomain(),
+            'secure'      => $cfg->getCookieSecure(),   // null = auto-detect
+            'httponly'    => $cfg->getCookieHttpOnly(),
         );
         $driver  = $cfg->getDriver();
 

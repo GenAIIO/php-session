@@ -29,22 +29,34 @@ class Session
     /** @var int cookie lifetime in seconds (0 = until browser closes) */
     private $lifetime;
 
+    /** @var string cookie path */
+    private $cookiePath;
+
     /** @var string cookie domain ('' = host-only; '.example.com' = shared across subdomains) */
     private $domain;
+
+    /** @var bool|null null = auto-detect (secure only over HTTPS) */
+    private $secure;
+
+    /** @var bool */
+    private $httponly;
 
     /** @var bool */
     private $started = false;
 
     /**
      * @param SessionStore|null $store
-     * @param array             $options name, lifetime, domain
+     * @param array $options name, lifetime, cookie_path, domain, secure (bool|null), httponly
      */
     public function __construct($store = null, $options = array())
     {
-        $this->store    = $store;
-        $this->name     = isset($options['name']) ? $options['name'] : 'GENAISESS';
-        $this->lifetime = isset($options['lifetime']) ? (int) $options['lifetime'] : 0;
-        $this->domain   = isset($options['domain']) ? (string) $options['domain'] : '';
+        $this->store      = $store;
+        $this->name       = isset($options['name']) ? $options['name'] : 'GENAISESS';
+        $this->lifetime   = isset($options['lifetime']) ? (int) $options['lifetime'] : 0;
+        $this->cookiePath = isset($options['cookie_path']) && $options['cookie_path'] !== '' ? (string) $options['cookie_path'] : '/';
+        $this->domain     = isset($options['domain']) ? (string) $options['domain'] : '';
+        $this->secure     = (isset($options['secure']) && $options['secure'] !== null) ? (bool) $options['secure'] : null;
+        $this->httponly   = isset($options['httponly']) ? (bool) $options['httponly'] : true;
     }
 
     private function start()
@@ -68,10 +80,13 @@ class Session
                 register_shutdown_function('session_write_close');
             }
 
-            $secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
+            // secure: explicit config wins; null → auto (secure only when the request is HTTPS).
+            $secure = ($this->secure !== null)
+                ? $this->secure
+                : (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
             // domain '' = host-only (default); a leading-dot domain like '.genai.io.vn'
             // makes the cookie shared across every subdomain (single sign-on).
-            session_set_cookie_params($this->lifetime, '/', $this->domain, $secure, true);
+            session_set_cookie_params($this->lifetime, $this->cookiePath, $this->domain, $secure, $this->httponly);
             session_name($this->name);
             session_start();
         }
