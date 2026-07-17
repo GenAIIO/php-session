@@ -30,7 +30,11 @@ class SessionFactory
      */
     public static function build(SessionProperty $cfg, $pdo = null)
     {
-        $options = array('name' => $cfg->getName(), 'lifetime' => $cfg->getLifetime());
+        $options = array(
+            'name'     => $cfg->getName(),
+            'lifetime' => $cfg->getLifetime(),
+            'domain'   => $cfg->getCookieDomain(),
+        );
         $driver  = $cfg->getDriver();
 
         if ($driver === 'database') {

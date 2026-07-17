@@ -27,14 +27,25 @@ class SessionProperty extends AbstractProperty
     private $lifetime;
     private $path;
     private $table;
+    private $cookieDomain;
 
     public function bindData(Map $data)
     {
-        $this->driver   = $data->get('driver');
-        $this->name     = $data->get('name');
-        $this->lifetime = $data->get('lifetime');
-        $this->path     = $data->get('path');
-        $this->table    = $data->get('table');
+        $this->driver       = $data->get('driver');
+        $this->name         = $data->get('name');
+        $this->lifetime     = $data->get('lifetime');
+        $this->path         = $data->get('path');
+        $this->table        = $data->get('table');
+        $this->cookieDomain = $data->get('cookie_domain');
+    }
+
+    /**
+     * Cookie domain. '' (default) = host-only. Set a leading-dot domain like
+     * '.genai.io.vn' to share the session cookie across all subdomains (SSO).
+     */
+    public function getCookieDomain()
+    {
+        return ($this->cookieDomain !== null) ? (string) $this->cookieDomain : '';
     }
 
     public function getDriver()

@@ -29,18 +29,22 @@ class Session
     /** @var int cookie lifetime in seconds (0 = until browser closes) */
     private $lifetime;
 
+    /** @var string cookie domain ('' = host-only; '.example.com' = shared across subdomains) */
+    private $domain;
+
     /** @var bool */
     private $started = false;
 
     /**
      * @param SessionStore|null $store
-     * @param array             $options name, lifetime
+     * @param array             $options name, lifetime, domain
      */
     public function __construct($store = null, $options = array())
     {
         $this->store    = $store;
         $this->name     = isset($options['name']) ? $options['name'] : 'GENAISESS';
         $this->lifetime = isset($options['lifetime']) ? (int) $options['lifetime'] : 0;
+        $this->domain   = isset($options['domain']) ? (string) $options['domain'] : '';
     }
 
     private function start()
@@ -65,7 +69,9 @@ class Session
             }
 
             $secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
-            session_set_cookie_params($this->lifetime, '/', '', $secure, true);
+            // domain '' = host-only (default); a leading-dot domain like '.genai.io.vn'
+            // makes the cookie shared across every subdomain (single sign-on).
+            session_set_cookie_params($this->lifetime, '/', $this->domain, $secure, true);
             session_name($this->name);
             session_start();
         }
