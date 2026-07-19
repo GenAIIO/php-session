@@ -70,10 +70,46 @@ class PdoStore implements SessionStore
             return true;
         }
 
-        $ins = $this->pdo->prepare(
-            'INSERT INTO ' . $this->table . ' (id, payload, expires_at) VALUES (?, ?, ?)'
-        );
-        return $ins->execute(array($id, $data, $expires));
+        // rowCount() == 0 does NOT reliably mean "no such row": on MySQL/TiDB an
+        // UPDATE that matches a row but leaves every column unchanged reports 0
+        // affected rows, and two requests sharing one session id can both land
+        // here. So the INSERT below may collide on the PRIMARY key even though the
+        // row already exists. Treat a duplicate-key violation as success and make
+        // sure our payload is the one that persists (re-run the UPDATE) — never let
+        // it bubble up as an uncaught PDOException that fatals session_write_close.
+        try {
+            $ins = $this->pdo->prepare(
+                'INSERT INTO ' . $this->table . ' (id, payload, expires_at) VALUES (?, ?, ?)'
+            );
+            return $ins->execute(array($id, $data, $expires));
+        } catch (\PDOException $e) {
+            if (!$this->isDuplicateKey($e)) {
+                throw $e;
+            }
+            // The row exists after all (identical-value UPDATE above, or a racing
+            // writer inserted it). Persist our payload over it and report success.
+            $up->execute(array($data, $expires, $id));
+            return true;
+        }
+    }
+
+    /**
+     * A UNIQUE / PRIMARY KEY violation, across PDO drivers. SQLSTATE 23000 covers
+     * MySQL/TiDB (driver code 1062) and, via PDO, SQLite unique constraints too.
+     */
+    private function isDuplicateKey(\PDOException $e)
+    {
+        if ($e->getCode() === '23000') {
+            return true;
+        }
+        $info = $e->errorInfo;
+        if (is_array($info) && isset($info[1])) {
+            $driverCode = (int) $info[1];
+            // MySQL/TiDB 1062; SQLite 19 (constraint) / 1555 / 2067 (unique).
+            return in_array($driverCode, array(1062, 19, 1555, 2067), true);
+        }
+
+        return false;
     }
 
     public function destroy($id)
